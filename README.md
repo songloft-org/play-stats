@@ -1,4 +1,4 @@
-# play-stats
+# songloft-plugin-stats
 
 SongLoft 播放统计插件 — 记录播放历史，展示听歌次数与艺术家排行。
 
@@ -24,6 +24,10 @@ npm run validate
 
 - Songloft 宿主版本 ≥ 2.8.2（需支持 `songloft.events.onPlayEvent`）
 - 权限：`storage`、`songs.read`
+
+## Author
+
+deerwan
 
 ## License
 

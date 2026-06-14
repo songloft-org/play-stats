@@ -1,8 +1,13 @@
 {
-  "name": "play-stats",
+  "name": "stats",
   "version": "2026.6.13",
   "description": "记录播放历史，统计听歌次数与艺术家排行",
   "private": true,
+  "homepage": "https://github.com/songloft-org/songloft-plugin-stats",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/songloft-org/songloft-plugin-stats.git"
+  },
   "scripts": {
     "build": "songloft-plugin build",
     "dev": "songloft-plugin dev",

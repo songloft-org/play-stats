@@ -4,9 +4,9 @@
   "version": "2026.6.13",
   "description": "记录播放历史，统计听歌次数与艺术家排行",
   "author": "deerwan",
-  "homepage": "",
+  "homepage": "https://github.com/songloft-org/songloft-plugin-stats",
   "license": "Apache-2.0",
-  "entryPath": "play-stats",
+  "entryPath": "stats",
   "main": "main.js",
   "minHostVersion": "2.8.2",
   "permissions": [
@@ -16,8 +16,8 @@
   "publicPaths": [
     "/api"
   ],
-  "updateUrl": "",
-  "download_url": "https://github.com/deerwan/play-stats-main/releases/download/v2026.6.13/play-stats.jsplugin.zip",
+  "updateUrl": "https://raw.githubusercontent.com/songloft-org/songloft-plugin-stats/main/plugin.json",
+  "download_url": "https://github.com/songloft-org/songloft-plugin-stats/releases/download/v2026.6.13/play-stats.jsplugin.zip",
   "entryHash": "c973b81b137ca1a024b58464c1f317bf52fcfddd300384fb01fd6292b5c49abd",
   "zipHash": "d34364b773d10f5e6f2f0afe7191306c5d8874797921b4b5f107c5fcdd0c3bbd"
 }

@@ -28,6 +28,6 @@ jobs:
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: play-stats-jsplugin
+          name: songloft-plugin-stats-jsplugin
           path: dist/*.jsplugin.zip
           retention-days: 30
