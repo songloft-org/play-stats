@@ -1,7 +1,5 @@
 import type { PlayRecord, StatsSummary } from './types';
 
-const MAX_DAYS = 365 * 10; // 安全上限，防止溢出
-
 function isValidRecord(r: PlayRecord): boolean {
   return (
     r != null &&
@@ -61,11 +59,4 @@ export function computeSummary(records: PlayRecord[]): StatsSummary {
     topSongs,
     bySource,
   };
-}
-
-export function filterByDays(records: PlayRecord[], days: number): PlayRecord[] {
-  if (days <= 0) return records;
-  const safeDays = Math.min(days, MAX_DAYS);
-  const since = Date.now() - safeDays * 24 * 60 * 60 * 1000;
-  return records.filter((r) => typeof r.timestamp === 'number' && r.timestamp >= since);
 }

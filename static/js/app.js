@@ -6,14 +6,13 @@ const { apiGet } = SongloftPlugin;
 
 const SOURCE_LABELS = {
   'songloft-player': '客户端',
-  miot: '智能音箱',
-  unknown: '未知',
+  'miot': '智能音箱',
+  'web': '网页端',
+  'mobile': '手机端',
+  'airplay': 'AirPlay',
+  'bluetooth': '蓝牙',
+  'unknown': '未知',
 };
-
-let currentDays = 0;
-const HISTORY_LIMIT = 5; // 固定显示最近 5 条记录
-let isLoading = false;
-let debounceTimer = null;
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────────
 
@@ -29,9 +28,13 @@ function formatDuration(sec) {
 function formatTime(ts) {
   const d = new Date(ts);
   const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const time = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  if (isToday) return `今天 ${time}`;
+  if (dateOnly.getTime() === today.getTime()) return `今天 ${time}`;
+  if (dateOnly.getTime() === yesterday.getTime()) return `昨天 ${time}`;
   return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) + ' ' + time;
 }
 
@@ -45,15 +48,16 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ── 加载状态 ──────────────────────────────────────────────────────────────────
-
-function setLoading(loading) {
-  isLoading = loading;
-  document.getElementById('summaryCards').classList.toggle('loading', loading);
-}
+// ── 渲染函数 ──────────────────────────────────────────────────────────────────
 
 function showError(message) {
   const errMsg = escapeHtml(message);
+  // 重置统计卡片
+  document.getElementById('totalPlays').textContent = '—';
+  document.getElementById('totalDuration').textContent = '—';
+  document.getElementById('uniqueSongs').textContent = '—';
+  document.getElementById('uniqueArtists').textContent = '—';
+  // 显示错误提示
   document.getElementById('topArtists').innerHTML =
     `<li class="rank-list__empty">加载失败: ${errMsg}</li>`;
   document.getElementById('topSongs').innerHTML =
@@ -141,13 +145,10 @@ function renderHistory(records) {
 // ── 数据请求 ──────────────────────────────────────────────────────────────────
 
 async function loadData() {
-  if (isLoading) return;
-  setLoading(true);
-  const daysParam = currentDays > 0 ? `?days=${currentDays}` : '';
   try {
     const [summary, history] = await Promise.all([
-      apiGet('/api/stats/summary' + daysParam),
-      apiGet(`/api/history?limit=${HISTORY_LIMIT}&offset=0`),
+      apiGet('/api/stats/summary'),
+      apiGet('/api/history?limit=5&offset=0'),
     ]);
     if (summary.success) renderSummary(summary.data);
     if (history.success) {
@@ -155,31 +156,13 @@ async function loadData() {
     }
   } catch (err) {
     showError(err.message || '未知错误');
-  } finally {
-    setLoading(false);
   }
 }
 
 // ── 初始化 ──────────────────────────────────────────────────────────────────
 
-function initTabs() {
-  document.querySelectorAll('.tabs__btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tabs__btn').forEach((b) => {
-        b.classList.remove('tabs__btn--active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('tabs__btn--active');
-      btn.setAttribute('aria-selected', 'true');
-      currentDays = parseInt(btn.dataset.days, 10) || 0;
-      // debounce 200ms
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(loadData, 200);
-    });
-  });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs();
   loadData();
+  // 每 30 秒自动刷新数据
+  setInterval(loadData, 30_000);
 });

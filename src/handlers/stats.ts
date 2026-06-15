@@ -1,19 +1,14 @@
 import { jsonResponse, parseQuery } from '@songloft/plugin-sdk';
 import type { Router } from '@songloft/plugin-sdk';
 import { loadHistory } from '../stats/store';
-import { computeSummary, filterByDays } from '../stats/aggregator';
+import { computeSummary } from '../stats/aggregator';
 
-const MAX_DAYS = 365;
 const MAX_LIMIT = 100;
 
 export function registerStatsHandlers(router: Router): void {
-  router.get('/api/stats/summary', async (req) => {
-    const q = parseQuery(req.query);
-    const rawDays = parseInt(String(q.days || '0'), 10);
-    const days = Number.isFinite(rawDays) ? Math.min(Math.max(0, rawDays), MAX_DAYS) : 0;
+  router.get('/api/stats/summary', async () => {
     const history = await loadHistory();
-    const filtered = days > 0 ? filterByDays(history, days) : history;
-    return jsonResponse({ success: true, data: computeSummary(filtered) });
+    return jsonResponse({ success: true, data: computeSummary(history) });
   });
 
   router.get('/api/history', async (req) => {
@@ -22,8 +17,20 @@ export function registerStatsHandlers(router: Router): void {
     const offset = Math.max(0, parseInt(String(q.offset || '0'), 10) || 0);
 
     const history = await loadHistory();
-    const reversed = history.slice().reverse();
-    const page = reversed.slice(offset, offset + limit);
+    // 从后往前取，按 songId 去重，显示最近 N 首不同的歌
+    const seen = new Set<number>();
+    const page: typeof history = [];
+    let skipped = 0;
+    for (let i = history.length - 1; i >= 0 && page.length < limit + offset; i--) {
+      const songId = history[i].songId;
+      if (seen.has(songId)) continue;
+      seen.add(songId);
+      if (skipped < offset) {
+        skipped++;
+        continue;
+      }
+      page.push(history[i]);
+    }
 
     return jsonResponse({
       success: true,

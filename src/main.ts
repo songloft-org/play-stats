@@ -15,13 +15,11 @@ function isDuplicate(songId: number, timestamp: number): boolean {
   const prev = lastRecorded.get(songId);
   if (prev !== undefined) {
     const timeDiff = Math.abs(timestamp - prev);
-    songloft.log.info(`[去重检查] songId=${songId} 上次=${prev} 现在=${timestamp} 间隔=${timeDiff}ms 窗口=${DEDUP_WINDOW_MS}ms`);
     if (timeDiff < DEDUP_WINDOW_MS) {
-      songloft.log.info(`[去重] ⚠️ 间隔 ${timeDiff}ms < ${DEDUP_WINDOW_MS}ms，判定为重复`);
+      songloft.log.info(`[去重] songId=${songId} 间隔${timeDiff}ms`);
       return true;
     }
   }
-  // 无论是否重复，都更新时间戳（防止持续被过滤）
   lastRecorded.set(songId, timestamp);
   // 清理过期条目，防止内存泄漏
   if (lastRecorded.size > 200) {
