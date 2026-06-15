@@ -19,6 +19,6 @@
   ],
   "updateUrl": "https://raw.githubusercontent.com/songloft-org/songloft-plugin-stats/main/plugin.json",
   "download_url": "https://github.com/songloft-org/songloft-plugin-stats/releases/download/v2026.6.15/stats.jsplugin.zip",
-  "entryHash": "c973b81b137ca1a024b58464c1f317bf52fcfddd300384fb01fd6292b5c49abd",
-  "zipHash": "d34364b773d10f5e6f2f0afe7191306c5d8874797921b4b5f107c5fcdd0c3bbd"
+  "entryHash": "cc4054fa68785754ed318d7317b127fb70b0646ca4443fcf9635a4a320b97b24",
+  "zipHash": "546531a7f94b53e4d5f28470ec4ec6210a8a2a6347b7764b4061b2d937f569ab"
 }

@@ -13,9 +13,15 @@ const lastRecorded = new Map<number, number>(); // songId -> timestamp
 
 function isDuplicate(songId: number, timestamp: number): boolean {
   const prev = lastRecorded.get(songId);
-  if (prev !== undefined && timestamp - prev < DEDUP_WINDOW_MS) {
-    return true;
+  if (prev !== undefined) {
+    const timeDiff = Math.abs(timestamp - prev);
+    songloft.log.info(`[去重检查] songId=${songId} 上次=${prev} 现在=${timestamp} 间隔=${timeDiff}ms 窗口=${DEDUP_WINDOW_MS}ms`);
+    if (timeDiff < DEDUP_WINDOW_MS) {
+      songloft.log.info(`[去重] ⚠️ 间隔 ${timeDiff}ms < ${DEDUP_WINDOW_MS}ms，判定为重复`);
+      return true;
+    }
   }
+  // 无论是否重复，都更新时间戳（防止持续被过滤）
   lastRecorded.set(songId, timestamp);
   // 清理过期条目，防止内存泄漏
   if (lastRecorded.size > 200) {
@@ -29,23 +35,17 @@ function isDuplicate(songId: number, timestamp: number): boolean {
 
 function subscribePlayEvents(): void {
   songloft.events.onPlayEvent(async (event: PlayEvent) => {
-    // 详细日志：记录所有事件的完整信息
     songloft.log.info(
-      `[PlayEvent] type=${event.type} source=${event.source} songId=${event.song.id} ${event.song.artist} - ${event.song.title} timestamp=${event.timestamp}`,
+      `[PlayEvent] type=${event.type} source=${event.source} songId=${event.song.id} ${event.song.artist} - ${event.song.title}`,
     );
     
     // 只记录 finish 事件（播放完成），跳过 play 和 skip 事件
-    // 这样可以避免用户只是点击预览就被记录，确保统计的是真正听完的歌曲
     if (event.type !== 'finish') {
-      songloft.log.info(`[跳过] 非 finish 事件不记录: type=${event.type} ${event.song.artist} - ${event.song.title}`);
       return;
     }
     
-    // finish 事件将通过去重检查
-    songloft.log.info(`[允许] type=finish 将通过去重检查`);
-    // 同一首歌 10s 内不重复记录（防止同一客户端同时发 play+finish）
+    // 同一首歌 10s 内不重复记录
     if (isDuplicate(event.song.id, event.timestamp)) {
-      songloft.log.info(`[去重] ${event.song.artist} - ${event.song.title}`);
       return;
     }
     try {

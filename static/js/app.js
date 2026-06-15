@@ -45,56 +45,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ── 自定义弹窗 / Toast ──────────────────────────────────────────────────────────
-
-let dialogResolve = null;
-
-function openDialog({ title, body, confirmText = '确定', cancelText = '取消', danger = false }) {
-  const overlay = document.getElementById('dialogOverlay');
-  const confirmBtn = document.getElementById('dialogConfirm');
-  const cancelBtn = document.getElementById('dialogCancel');
-
-  document.getElementById('dialogTitle').textContent = title;
-  document.getElementById('dialogBody').textContent = body;
-  confirmBtn.textContent = confirmText;
-  cancelBtn.textContent = cancelText;
-  confirmBtn.classList.toggle('dialog__btn--danger', danger);
-
-  overlay.classList.add('open');
-
-  return new Promise((resolve) => {
-    dialogResolve = resolve;
-  });
-}
-
-function closeDialog(result) {
-  const overlay = document.getElementById('dialogOverlay');
-  overlay.classList.remove('open');
-  if (dialogResolve) {
-    dialogResolve(result);
-    dialogResolve = null;
-  }
-}
-
-let toastTimer = null;
-
-function showToast(message, duration = 2500) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
-}
-
-function initDialog() {
-  document.getElementById('dialogConfirm').addEventListener('click', () => closeDialog(true));
-  document.getElementById('dialogCancel').addEventListener('click', () => closeDialog(false));
-  // 点击遮罩关闭
-  document.getElementById('dialogOverlay').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeDialog(false);
-  });
-}
-
 // ── 加载状态 ──────────────────────────────────────────────────────────────────
 
 function setLoading(loading) {
@@ -230,7 +180,6 @@ function initTabs() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initDialog();
   initTabs();
   loadData();
 });

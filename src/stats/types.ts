@@ -17,12 +17,3 @@ export interface StatsSummary {
   topSongs: { songId: number; title: string; artist: string; plays: number }[];
   bySource: Record<string, number>;
 }
-
-export interface DailyTrendItem {
-  /** 日期标签，格式 "MM-DD" */
-  date: string;
-  /** 当天播放次数 */
-  plays: number;
-  /** 当天播放总时长（秒） */
-  durationSec: number;
-}

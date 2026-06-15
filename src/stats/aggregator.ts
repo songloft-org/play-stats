@@ -1,4 +1,4 @@
-import type { PlayRecord, StatsSummary, DailyTrendItem } from './types';
+import type { PlayRecord, StatsSummary } from './types';
 
 const MAX_DAYS = 365 * 10; // 安全上限，防止溢出
 
@@ -68,44 +68,4 @@ export function filterByDays(records: PlayRecord[], days: number): PlayRecord[] 
   const safeDays = Math.min(days, MAX_DAYS);
   const since = Date.now() - safeDays * 24 * 60 * 60 * 1000;
   return records.filter((r) => typeof r.timestamp === 'number' && r.timestamp >= since);
-}
-
-/**
- * 按天聚合播放趋势，返回最近 N 天的每日数据。
- * 不足天数用 0 填充，保证返回数组长度始终等于 days。
- */
-export function computeDailyTrend(records: PlayRecord[], days: number): DailyTrendItem[] {
-  if (days <= 0 || days > MAX_DAYS) days = 30;
-
-  // 按日期 key 聚合
-  const dayMap = new Map<string, { plays: number; durationSec: number }>();
-  for (const r of records) {
-    if (!isValidRecord(r)) continue;
-    const d = new Date(r.timestamp);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const existing = dayMap.get(key);
-    if (existing) {
-      existing.plays++;
-      existing.durationSec += r.duration || 0;
-    } else {
-      dayMap.set(key, { plays: 1, durationSec: r.duration || 0 });
-    }
-  }
-
-  // 生成最近 N 天的完整序列（从早到晚）
-  const result: DailyTrendItem[] = [];
-  const now = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const label = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const agg = dayMap.get(key);
-    result.push({
-      date: label,
-      plays: agg ? agg.plays : 0,
-      durationSec: agg ? agg.durationSec : 0,
-    });
-  }
-  return result;
 }
