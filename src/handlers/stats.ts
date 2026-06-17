@@ -1,14 +1,12 @@
 import { jsonResponse, parseQuery } from '@songloft/plugin-sdk';
 import type { Router } from '@songloft/plugin-sdk';
-import { loadHistory } from '../stats/store';
-import { computeSummary } from '../stats/aggregator';
+import { loadHistory, getSummary } from '../stats/store';
 
 const MAX_LIMIT = 100;
 
 export function registerStatsHandlers(router: Router): void {
   router.get('/api/stats/summary', async () => {
-    const history = await loadHistory();
-    return jsonResponse({ success: true, data: computeSummary(history) });
+    return jsonResponse({ success: true, data: await getSummary() });
   });
 
   router.get('/api/history', async (req) => {

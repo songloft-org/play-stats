@@ -15,8 +15,8 @@
     "publish:release": "songloft-plugin publish"
   },
   "devDependencies": {
-    "@songloft/plugin-builder": "^2.5.1",
-    "@songloft/plugin-sdk": "^2.5.1",
+    "@songloft/plugin-builder": "^2.6.0",
+    "@songloft/plugin-sdk": "^2.6.0",
     "typescript": "^5.7.0"
   }
 }

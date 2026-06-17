@@ -7,25 +7,39 @@ import { appendRecord, drainWrites } from './stats/store';
 const router = createRouter();
 registerStatsHandlers(router);
 
-// ── 去重机制：同一首歌在短时间内（10s）不重复记录 ──────────────────────────────
-const DEDUP_WINDOW_MS = 10_000;
-const lastRecorded = new Map<number, number>(); // songId -> timestamp
+// ── 去重机制：同一首歌至少间隔 duration 50%（最低 10s）才记录 ─────────────────
+const MIN_DEDUP_MS = 10_000;
+const lastRecorded = new Map<number, { timestamp: number; duration: number }>();
 
-function isDuplicate(songId: number, timestamp: number): boolean {
+async function getSongDuration(songId: number): Promise<number> {
+  try {
+    const song = await songloft.songs.getById(songId);
+    return song?.duration ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function isDuplicate(songId: number, timestamp: number): Promise<boolean> {
   const prev = lastRecorded.get(songId);
   if (prev !== undefined) {
-    const timeDiff = Math.abs(timestamp - prev);
-    if (timeDiff < DEDUP_WINDOW_MS) {
-      songloft.log.info(`[去重] songId=${songId} 间隔${timeDiff}ms`);
+    const timeDiff = Math.abs(timestamp - prev.timestamp);
+    // 动态窗口：取 max(10s, duration * 50%)
+    const windowMs = prev.duration > 0
+      ? Math.max(MIN_DEDUP_MS, prev.duration * 500)
+      : MIN_DEDUP_MS;
+    if (timeDiff < windowMs) {
+      songloft.log.info(`[去重] songId=${songId} 间隔${timeDiff}ms < 窗口${windowMs}ms`);
       return true;
     }
   }
-  lastRecorded.set(songId, timestamp);
+  const duration = await getSongDuration(songId);
+  lastRecorded.set(songId, { timestamp, duration });
   // 清理过期条目，防止内存泄漏
   if (lastRecorded.size > 200) {
-    const cutoff = Date.now() - DEDUP_WINDOW_MS * 2;
-    for (const [id, ts] of lastRecorded) {
-      if (ts < cutoff) lastRecorded.delete(id);
+    const cutoff = Date.now() - MIN_DEDUP_MS * 2;
+    for (const [id, v] of lastRecorded) {
+      if (v.timestamp < cutoff) lastRecorded.delete(id);
     }
   }
   return false;
@@ -42,8 +56,8 @@ function subscribePlayEvents(): void {
       return;
     }
     
-    // 同一首歌 10s 内不重复记录
-    if (isDuplicate(event.song.id, event.timestamp)) {
+    // 同一首歌至少间隔 duration 50% 才算有效播放
+    if (await isDuplicate(event.song.id, event.timestamp)) {
       return;
     }
     try {

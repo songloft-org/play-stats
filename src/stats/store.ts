@@ -1,11 +1,16 @@
 import type { PlayEvent } from '@songloft/plugin-sdk';
-import type { PlayRecord } from './types';
+import type { PlayRecord, StatsSummary } from './types';
+import { computeSummary } from './aggregator';
 
 const HISTORY_KEY = 'play_history';
-const MAX_HISTORY = 5000;
+const MAX_HISTORY = 20000;
 
 // ── 内存缓存 ──────────────────────────────────────────────────────────────────
 let cache: PlayRecord[] | null = null;
+
+// ── 聚合结果缓存（dirty 标记）──────────────────────────────────────────────────
+let summaryDirty = true;
+let cachedSummary: StatsSummary | null = null;
 
 async function readRaw(): Promise<PlayRecord[]> {
   const raw = await songloft.storage.get(HISTORY_KEY);
@@ -45,16 +50,23 @@ async function flushSave(records: PlayRecord[]): Promise<void> {
 
 // ── 记录写入 ──────────────────────────────────────────────────────────────────
 
+/** 获取聚合摘要（带 dirty 缓存，仅数据变更时重算）*/
+export async function getSummary(): Promise<StatsSummary> {
+  if (!summaryDirty && cachedSummary) return cachedSummary;
+  const history = await loadHistory();
+  cachedSummary = computeSummary(history);
+  summaryDirty = false;
+  return cachedSummary;
+}
+
 async function doAppend(event: PlayEvent): Promise<PlayRecord> {
   const record: PlayRecord = {
     songId: event.song.id,
-    title: event.song.title,
+    title: event.song.title || '未知歌曲',
     artist: event.song.artist || '未知艺术家',
     source: event.source || 'unknown',
     timestamp: event.timestamp,
   };
-
-  if (!record.title) record.title = '未知歌曲';
 
   try {
     const song = await songloft.songs.getById(event.song.id);
@@ -68,6 +80,7 @@ async function doAppend(event: PlayEvent): Promise<PlayRecord> {
 
   const history = await loadHistory();
   history.push(record);
+  summaryDirty = true;
   await flushSave(history);
   return record;
 }

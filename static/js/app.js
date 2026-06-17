@@ -163,6 +163,14 @@ async function loadData() {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
-  // 每 30 秒自动刷新数据
-  setInterval(loadData, 30_000);
+  // 每 30 秒自动刷新数据，页面不可见时暂停轮询
+  let timer = setInterval(loadData, 30_000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      loadData(); // 切回前台立即拉取
+      timer = setInterval(loadData, 30_000);
+    } else {
+      clearInterval(timer);
+    }
+  });
 });
